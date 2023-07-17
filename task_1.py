@@ -55,13 +55,14 @@ def show_registration(username, password, modulename):
                         print("You are registered to the module " + modulename)
                         return
                   
-                    print("You did not register to the module " + modulename)
-                    return
+                    else:
+                        print("You did not register to the module " + modulename)
+                        return
             elif user["type"] == "Teacher":                
                 print("You are a teacher")
                 return
     # If the loop completes without finding a matching user
-    print("User not found or invalid credentials")
+    print("You did not register to the module " + modulename)
                 
 # codes to test:
 username = input("What is your username? ")
