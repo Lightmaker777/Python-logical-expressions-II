@@ -6,14 +6,8 @@ users = [
         "type": "Student",
         "password": "hunter",
         "modules": [
-            {
-                "title": "Computer basics",
-                "completed": True
-            },
-            {
-                "title": "Python basics",
-                "completed": False
-            }
+            {"title": "Computer basics", "completed": True},
+            {"title": "Python basics", "completed": False}
         ]
     },
     {
@@ -21,10 +15,7 @@ users = [
         "type": "Student",
         "password": "pan",
         "modules": [
-            {
-                "title": "Computer basics",
-                "completed": False
-            }
+            {"title": "Computer basics", "completed": False}
         ]
     },
     {
@@ -32,10 +23,7 @@ users = [
         "type": "Student",
         "password": "skywalker",
         "modules": [
-            {
-                "title": "Computer basics",
-                "completed": True
-            }
+            {"title": "Computer basics", "completed": True}
         ]
     },
     {
@@ -44,103 +32,89 @@ users = [
         "password": "joplin"
     }
 ]
-
-modules = [
-    {
-        "name": "Computer basics"
-    },
-    {
-        "name": "Python basics",
-        "requirement": "Computer basics"
-    },
-    {
-        "name": "Django",
-        "requirement": "Python basics"
-    }
-]
-
-def show_registration(username, password, modulename):
+# Create a dictionary to store the modules and their requirements
+modules = {
+    "Computer basics": None,
+    "Python basics": "Computer basics",
+    "Django": "Python basics"
+}
+# Define a function to show if a user is registered to a module
+def show_registration(username, password, module_name):
+    user = find_user(username, password)
+    if not user:
+        print(f"You did not register to the module {module_name}.")
+    elif is_teacher(user):
+        print("You are a teacher.")
+    elif is_student(user):
+        if is_module_registered(user, module_name):
+            print(f"You are registered to the module {module_name}.")
+        else:
+            print(f"You did not register to the module {module_name}.")
+# Define a function to show if a user has completed a module
+def has_completed_module(username, password, module_name):
+    user = find_user(username, password)
+    if not user:
+        print(f"You did not complete the module {module_name}.")
+    elif is_teacher(user):
+        return
+    elif is_student(user):
+        if is_module_completed(user, module_name):
+            print(f"You have completed the module {module_name}.")
+        else:
+            print(f"You did not complete the module {module_name}.")
+# Define a function to find a user by name and password
+def find_user(username, password):
     for user in users:
-        if user["name"] == username and user["password"] == password:
-            if user["type"] == "Student":
-                for module in user["modules"]:
-                    if module["title"] == modulename:
-                        print(f"You are registered to the module {modulename}.")
-                        return
-                print(f"You did not register to the module {modulename}.")
-                return
-            elif user["type"] == "Teacher":
-                print("You are a teacher.")
-                return
-
-def has_completed_module(username, password, modulename):
-    for user in users:
-        if user["name"] == username and user["password"] == password:
-            if user["type"] == "Student":
-                for module in user["modules"]:
-                    if module["title"] == modulename:
-                        if module.get("completed", False):
-                            print(f"You have completed the module {modulename}.")
-                            return
-                        else:
-                            print(f"You did not complete the module {modulename}.")
-                            return
-                print(f"You did not register to the module {modulename}.")
-                return
-            elif user["type"] == "Teacher":
-                return
-
-def may_enroll(username, password, modulename):
-    def is_anonymous():
-        for user in users:
-            if user["name"] == username and user["password"] == password:
-                return False
-        return True
-
-    def has_no_requirement():
-        for module in modules:
-            if module["name"] == modulename and "requirement" not in module:
+        if user["name"] == username and user.get("password") == password:
+            return user
+    return None
+# Define a function to check if a user is a student
+def is_student(user):
+    return user["type"] == "Student"
+# Define a function to check if a user is a teacher
+def is_teacher(user):
+    return user and user.get("type") == "Teacher"
+# Define a function to check if a user is registered to a module
+def is_module_registered(user, module_name):
+    return module_name in (module["title"] for module in user.get("modules", []))
+# Define a function to check if a user has completed a module
+def is_module_completed(user, module_name):
+    if is_student(user) and is_module_registered(user, module_name):
+        for module in user["modules"]:
+            if module["title"] == module_name and module.get("completed", False):
                 return True
+    return False
+
+# Helper function to check if a user is anonymous
+def is_anonymous(username):
+    return username.lower() == "anonymous"
+# Helper function to check if a module has no requirement
+def has_no_requirement(module_name):
+    return modules.get(module_name) is None
+# Helper function to check if a user meets the requirement for a module
+def meets_requirement(user, module_name):
+    requirement = modules.get(module_name)
+    return is_module_registered(user, requirement) and is_module_completed(user, requirement)
+# Updated function to check if a user may enroll in a module
+def may_enroll(username, password, module_name):
+    user = find_user(username, password)
+    # Anonymous users are allowed to enroll in modules without requirements
+    if is_anonymous(username):
+        return has_no_requirement(module_name)
+    if not user:
         return False
-
-    def meets_requirement():
-        for module in modules:
-            if module["name"] == modulename and "requirement" in module:
-                requirement = module["requirement"]
-                for user in users:
-                    if user["name"] == username and user["password"] == password:
-                        if "modules" in user:
-                            for user_module in user["modules"]:
-                                if user_module["title"] == requirement and user_module.get("completed", False):
-                                    return True
-                return False
-
-    if is_anonymous() and has_no_requirement():
-        return True
-    elif not is_anonymous() and (has_no_requirement() or meets_requirement()):
-        return True
-    else:
+    if module_name not in modules:
         return False
-
-# Test the functions
+    if is_student(user) and not is_module_registered(user, module_name):
+        return has_no_requirement(module_name) or meets_requirement(user, module_name)
+    return False
+# Test the functions with user inputs
 username = input("What is your username? ")
 password = input(f"Type the password for username {username}: ")
-modulename = input("What module do you want to check? ")
-
-# Check if the user exists
-user_exists = False
-for user in users:
-    if user["name"] == username and user["password"] == password:
-        user_exists = True
-        break
-
-# Perform the required actions based on user existence
-if user_exists:
-    show_registration(username, password, modulename)
-    has_completed_module(username, password, modulename)
-    if may_enroll(username, password, modulename):
-        print(f"You may register to the module {modulename}.")
-    else:
-        print(f"You may not register to the module {modulename}.")
+module_name = input("What module do you want to check? ")
+show_registration(username, password, module_name)
+has_completed_module(username, password, module_name)
+if may_enroll(username, password, module_name):
+    print(f"You may register to the module {module_name}.")
 else:
-    print("User not found or invalid credentials")
+    print(f"You may not register to the module {module_name}.")
